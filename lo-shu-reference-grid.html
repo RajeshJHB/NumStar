@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lo Shu Grid Reference</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .grid-cell {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8">Lo Shu Grid Reference</h1>
+        
+        <!-- Reference Grid -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-center">Standard Lo Shu Grid Layout</h2>
+            <p class="text-sm text-gray-600 mb-6 text-center">This is the reference grid showing the standard positions of numbers 1-9</p>
+            
+            <div class="grid grid-cols-3 gap-3 mx-auto" style="max-width: 500px;">
+                <!-- Row 1 -->
+                <div class="grid-cell bg-gray-500 text-white">
+                    <div class="text-sm font-bold mb-2">Rahu</div>
+                    <div class="text-3xl font-bold">4</div>
+                    <div class="text-xs mt-1 opacity-75">Northwest</div>
+                </div>
+                <div class="grid-cell bg-red-500 text-white">
+                    <div class="text-sm font-bold mb-2">Mars</div>
+                    <div class="text-3xl font-bold">9</div>
+                    <div class="text-xs mt-1 opacity-75">South</div>
+                </div>
+                <div class="grid-cell bg-slate-300 text-gray-800">
+                    <div class="text-sm font-bold mb-2">Moon</div>
+                    <div class="text-3xl font-bold">2</div>
+                    <div class="text-xs mt-1 opacity-75">Southwest</div>
+                </div>
+                
+                <!-- Row 2 -->
+                <div class="grid-cell bg-yellow-400 text-gray-900">
+                    <div class="text-sm font-bold mb-2">Jupiter</div>
+                    <div class="text-3xl font-bold">3</div>
+                    <div class="text-xs mt-1 opacity-75">East</div>
+                </div>
+                <div class="grid-cell bg-green-500 text-white">
+                    <div class="text-sm font-bold mb-2">Mercury</div>
+                    <div class="text-3xl font-bold">5</div>
+                    <div class="text-xs mt-1 opacity-75">Center</div>
+                </div>
+                <div class="grid-cell bg-amber-700 text-white">
+                    <div class="text-sm font-bold mb-2">Ketu</div>
+                    <div class="text-3xl font-bold">7</div>
+                    <div class="text-xs mt-1 opacity-75">West</div>
+                </div>
+                
+                <!-- Row 3 -->
+                <div class="grid-cell bg-blue-900 text-white">
+                    <div class="text-sm font-bold mb-2">Saturn</div>
+                    <div class="text-3xl font-bold">8</div>
+                    <div class="text-xs mt-1 opacity-75">Northeast</div>
+                </div>
+                <div class="grid-cell bg-orange-500 text-white">
+                    <div class="text-sm font-bold mb-2">Sun</div>
+                    <div class="text-3xl font-bold">1</div>
+                    <div class="text-xs mt-1 opacity-75">North</div>
+                </div>
+                <div class="grid-cell bg-pink-500 text-white">
+                    <div class="text-sm font-bold mb-2">Venus</div>
+                    <div class="text-3xl font-bold">6</div>
+                    <div class="text-xs mt-1 opacity-75">Southeast</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid Information Table -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <h2 class="text-xl font-semibold mb-4">Grid Position Reference</h2>
+            <table class="w-full border-collapse border border-gray-300">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="border border-gray-300 p-3 text-left">Number</th>
+                        <th class="border border-gray-300 p-3 text-left">Planet</th>
+                        <th class="border border-gray-300 p-3 text-left">Direction</th>
+                        <th class="border border-gray-300 p-3 text-left">Color</th>
+                        <th class="border border-gray-300 p-3 text-center">Position</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="border border-gray-300 p-3 font-bold text-center">1</td>
+                        <td class="border border-gray-300 p-3">Sun</td>
+                        <td class="border border-gray-300 p-3">North</td>
+                        <td class="border border-gray-300 p-3">Orange</td>
+                        <td class="border border-gray-300 p-3 text-center">Row 3, Col 2</td>
+                    </tr>
+                    <tr>
+                        <td class="border border-gray-300 p-3 font-bold text-center">2</td>
+                        <td class="border border-gray-300 p-3">Moon</td>
+                        <td class="border border-gray-300 p-3">Southwest</td>
+                        <td class="border border-gray-300 p-3">Silver</td>
+                        <td class="border border-gray-300 p-3 text-center">Row 1, Col 3</td>
+                    </tr>
+                    <tr>
+                        <td class="border border-gray-300 p-3 font-bold text-center">3</td>
+                        <td class="border border-gray-300 p-3">Jupiter</td>
+                        <td class="border border-gray-300 p-3">East</td>
+                        <td class="border border-gray-300 p-3">Yellow</td>
+                        <td class="border border-gray-300 p-3 text-center">Row 2, Col 1</td>
+                    </tr>
+                    <tr>
+                        <td class="border border-gray-300 p-3 font-bold text-center">4</td>
+                        <td class="border border-gray-300 p-3">Rahu</td>
+                        <td class="border border-gray-300 p-3">Northwest</td>
+                        <td class="border border-gray-300 p-3">Smoky Grey</td>
+                        <td class="border border-gray-300 p-3 text-center">Row 1, Col 1</td>
+                    </tr>
+                    <tr>
+                        <td class="border border-gray-300 p-3 font-bold text-center">5</td>
+                        <td class="border border-gray-300 p-3">Mercury</td>
+                        <td class="border border-gray-300 p-3">Center</td>
+                        <td class="border border-gray-300 p-3">Green</td>
+                        <td class="border border-gray-300 p-3 text-center">Row 2, Col 2</td>
+                    </tr>
+                    <tr>
+                        <td class="border border-gray-300 p-3 font-bold text-center">6</td>
+                        <td class="border border-gray-300 p-3">Venus</td>
+                        <td class="border border-gray-300 p-3">Southeast</td>
+                        <td class="border border-gray-300 p-3">Pink</td>
+                        <td class="border border-gray-300 p-3 text-center">Row 3, Col 3</td>
+                    </tr>
+                    <tr>
+                        <td class="border border-gray-300 p-3 font-bold text-center">7</td>
+                        <td class="border border-gray-300 p-3">Ketu</td>
+                        <td class="border border-gray-300 p-3">West</td>
+                        <td class="border border-gray-300 p-3">Earthy Tan</td>
+                        <td class="border border-gray-300 p-3 text-center">Row 2, Col 3</td>
+                    </tr>
+                    <tr>
+                        <td class="border border-gray-300 p-3 font-bold text-center">8</td>
+                        <td class="border border-gray-300 p-3">Saturn</td>
+                        <td class="border border-gray-300 p-3">Northeast</td>
+                        <td class="border border-gray-300 p-3">Deep Blue</td>
+                        <td class="border border-gray-300 p-3 text-center">Row 3, Col 1</td>
+                    </tr>
+                    <tr>
+                        <td class="border border-gray-300 p-3 font-bold text-center">9</td>
+                        <td class="border border-gray-300 p-3">Mars</td>
+                        <td class="border border-gray-300 p-3">South</td>
+                        <td class="border border-gray-300 p-3">Red</td>
+                        <td class="border border-gray-300 p-3 text-center">Row 1, Col 2</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Magic Square Property -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
+            <h3 class="text-lg font-semibold text-blue-900 mb-2">Magic Square Property</h3>
+            <p class="text-blue-800">
+                The Lo Shu grid is a 3×3 magic square where each row, column, and diagonal sums to <strong>15</strong>:
+            </p>
+            <ul class="list-disc list-inside mt-3 text-blue-800 space-y-1">
+                <li><strong>Rows:</strong> 4+9+2 = 15, 3+5+7 = 15, 8+1+6 = 15</li>
+                <li><strong>Columns:</strong> 4+3+8 = 15, 9+5+1 = 15, 2+7+6 = 15</li>
+                <li><strong>Diagonals:</strong> 4+5+6 = 15, 2+5+8 = 15</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+
+
