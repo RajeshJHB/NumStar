@@ -10,7 +10,7 @@
             <div class="border-b pb-4">
                 <h2 class="text-xl font-semibold mb-2">Version Information</h2>
                 <p class="text-gray-700">
-                    <strong>Version:</strong> 1.0
+                    <strong>Version:</strong> 1.2
                 </p>
             </div>
 

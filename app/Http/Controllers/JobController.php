@@ -296,17 +296,6 @@ class JobController extends Controller
                 ], 400);
             }
 
-            // Log the received request values
-            \Log::info('Vedic Astrology Request Received', [
-                'year' => $request->year,
-                'month' => $request->month,
-                'day' => $request->day,
-                'time' => $time,
-                'country' => $country,
-                'town' => $town,
-                'coordinates' => $coordinates,
-            ]);
-
             // Calculate Vedic astrology chart
             $chartData = $this->calculateVedicChart(
                 $request->year,
@@ -455,22 +444,6 @@ class JobController extends Controller
                     ],
                 ];
 
-                // Log the exact payload being sent to the API
-                \Log::info('Vedic API Payload', [
-                    'api_url' => $apiUrl,
-                    'payload' => $payload,
-                    'payload_json' => json_encode($payload, JSON_PRETTY_PRINT),
-                    'input_values' => [
-                        'year' => $year,
-                        'month' => $month,
-                        'day' => $day,
-                        'time' => $time,
-                        'lat' => $lat,
-                        'lon' => $lon,
-                        'timezone' => $timezone,
-                    ],
-                ]);
-
                 $request = Http::timeout(10)
                     ->withHeaders([
                         'Accept'       => 'application/json',
@@ -485,14 +458,6 @@ class JobController extends Controller
                 }
 
                 $response = $request->post($apiUrl, $payload);
-
-                // Log the API response
-                \Log::info('Vedic API Response', [
-                    'status_code' => $response->status(),
-                    'successful' => $response->successful(),
-                    'response_body' => $response->body(),
-                    'response_json' => $response->successful() ? $response->json() : null,
-                ]);
 
                 if ($response->successful()) {
                     $apiData = $response->json();
