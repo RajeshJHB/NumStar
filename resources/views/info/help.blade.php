@@ -45,7 +45,7 @@
                     and name calculations.
                 </p>
                 <p class="text-gray-700">
-                    The grid displays numbers that appear in your Life Path, Main Planet (Destiny Number), and other
+                    The grid displays numbers that appear in your Conductor, Driver Number (Destiny Number), and other
                     numerology calculations. Missing numbers indicate areas that may need attention or development.
                 </p>
             </div>
@@ -55,7 +55,7 @@
                 <h2 class="text-2xl font-semibold mb-4">Numerology Numbers Explained</h2>
                 <div class="space-y-4">
                     <div>
-                        <h3 class="text-lg font-semibold mb-2">Life Path Number</h3>
+                        <h3 class="text-lg font-semibold mb-2">Conductor Number</h3>
                         <p class="text-gray-700">Calculated from your full date of birth. It represents your life's journey
                             and core personality traits.</p>
                     </div>
@@ -80,7 +80,7 @@
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold mb-2">Maturity Number</h3>
-                        <p class="text-gray-700">Sum of Life Path and Destiny Number. It indicates your potential in later
+                        <p class="text-gray-700">Sum of Conductor and Destiny Number. It indicates your potential in later
                             life.</p>
                     </div>
                     <div>

@@ -396,12 +396,12 @@
                 const month = parseInt(dateParts[1], 10);
                 const day = parseInt(dateParts[2], 10);
 
-                // Main Planet Number (day of birth reduced to single digit)
-                const mainPlanet = reduceToSingleDigit(day);
+                // Driver Number (day of birth reduced to single digit)
+                const driverNumber = reduceToSingleDigit(day);
 
-                // Calculate life path number (sum of all date digits)
+                // Calculate conductor number (sum of all date digits)
                 const yearSum = year.toString().split('').reduce((sum, d) => sum + parseInt(d), 0);
-                const lifePath = reduceToSingleDigit(day + month + yearSum);
+                const conductor = reduceToSingleDigit(day + month + yearSum);
 
                 // Calculate Destiny Number from name
                 const fullName = [name, middleName, surname].filter(Boolean).join(' ');
@@ -412,19 +412,18 @@
                 // Birthday Number (day of birth - not reduced, just the day)
                 const birthdayNumber = day;
 
-                // Maturity Number (sum of Life Path and Destiny Number, then reduced)
+                // Maturity Number (sum of Conductor and Destiny Number, then reduced)
                 let maturityNumber = null;
-                if (lifePath && destinyNumber) {
-                    const maturitySum = lifePath.final + destinyNumber.final;
+                if (conductor && destinyNumber) {
+                    const maturitySum = conductor.final + destinyNumber.final;
                     maturityNumber = reduceToSingleDigit(maturitySum);
                 }
 
                 // Get all digits from date of birth only (ignore 0)
+                // Exclude day digits - they will be handled separately via Driver Number logic
+                // This ensures birthday number (day) is not added separately when day is 1-9
                 const allDateDigits = [];
-                day.toString().split('').forEach(d => {
-                    const digit = parseInt(d);
-                    if (digit > 0) allDateDigits.push(digit);
-                });
+                // Day digits are excluded - handled by Driver Number logic below
                 month.toString().split('').forEach(d => {
                     const digit = parseInt(d);
                     if (digit > 0) allDateDigits.push(digit);
@@ -445,23 +444,39 @@
                     }
                 });
 
-                // Add Main Planet number digits to the count (use .final)
-                const mainPlanetDigits = mainPlanet.final.toString().split('').map(d => parseInt(d)).filter(d => d > 0 && d <= 9);
-                mainPlanetDigits.forEach(digit => {
+                // Add Driver Number digits to the count
+                // If day is already a single digit (1-9), add it only once (not added via date digits)
+                // If day is multi-digit, add all individual digits AND the reduced final value
+                if (day >= 1 && day <= 9) {
+                    // Day is already single digit, add it once directly via Driver Number only
+                    digitCounts[day]++;
+                } else {
+                    // Day is multi-digit: add all individual digits from the day
+                    day.toString().split('').forEach(d => {
+                        const digit = parseInt(d);
+                        if (digit >= 1 && digit <= 9) {
+                            digitCounts[digit]++;
+                        }
+                    });
+                    // Also add the reduced final value
+                    if (driverNumber.final >= 1 && driverNumber.final <= 9) {
+                        digitCounts[driverNumber.final]++;
+                    }
+                }
+
+                // Add Conductor number digits to the count (use .final)
+                const conductorDigits = conductor.final.toString().split('').map(d => parseInt(d)).filter(d => d > 0 && d <= 9);
+                conductorDigits.forEach(digit => {
                     digitCounts[digit]++;
                 });
 
-                // Add Life Path number digits to the count (use .final)
-                const lifePathDigits = lifePath.final.toString().split('').map(d => parseInt(d)).filter(d => d > 0 && d <= 9);
-                lifePathDigits.forEach(digit => {
-                    digitCounts[digit]++;
-                });
-
-                // Add Destiny Number digits to the count (if provided, use .final)
+                // Track Destiny Number digits separately to mark them with "(Name)"
+                const destinyNumberDigits = new Set();
                 if (destinyNumber) {
                     const destinyDigits = destinyNumber.final.toString().split('').map(d => parseInt(d)).filter(d => d > 0 && d <= 9);
                     destinyDigits.forEach(digit => {
                         digitCounts[digit]++;
+                        destinyNumberDigits.add(digit);
                     });
                 }
 
@@ -486,17 +501,49 @@
                     [{ planet: 'Saturn', display: '' }, { planet: 'Sun', display: '' }, { planet: 'Venus', display: '' }]
                 ];
 
+                // Track Name digits separately to add them at the end
+                const nameDigitsByPosition = {};
+
                 // Fill grid with digit instances (repeat digit based on count)
+                // Regular digits first, Name digits will be added at the end
                 Object.keys(digitCounts).forEach(digitStr => {
                     const digit = parseInt(digitStr);
                     const count = digitCounts[digit];
                     if (count > 0 && digit >= 1 && digit <= 9) {
                         const pos = gridPositions[digit];
                         if (pos) {
-                            // Display the digit repeated 'count' times
-                            grid[pos.row][pos.col].display = digit.toString().repeat(count);
+                            // Build display string: repeat digit
+                            let displayStr = digit.toString().repeat(count);
+                            
+                            // If this digit comes from Name, track it separately and remove one from regular count
+                            if (destinyNumberDigits.has(digit)) {
+                                // Remove one occurrence for Name (it will be added at the end as 'Name-digit')
+                                if (count > 1) {
+                                    displayStr = displayStr.slice(0, -1);
+                                } else {
+                                    displayStr = ''; // If only one occurrence and it's from Name, remove it completely
+                                }
+                                // Track this Name digit to add at the end
+                                const posKey = `${pos.row}-${pos.col}`;
+                                if (!nameDigitsByPosition[posKey]) {
+                                    nameDigitsByPosition[posKey] = [];
+                                }
+                                nameDigitsByPosition[posKey].push(digit);
+                            }
+                            
+                            grid[pos.row][pos.col].display = displayStr;
                         }
                     }
+                });
+
+                // Add Name digits at the end of each grid cell
+                Object.keys(nameDigitsByPosition).forEach(posKey => {
+                    const [row, col] = posKey.split('-').map(Number);
+                    const nameDigits = nameDigitsByPosition[posKey];
+                    const current = grid[row][col].display || '';
+                    // Add each Name digit in format 'Name-digit' at the end with smaller font size
+                    const nameDisplay = nameDigits.map(d => `<span class="text-sm">'Name-${d}'</span>`).join(' ');
+                    grid[row][col].display = current + (current ? ' ' : '') + nameDisplay;
                 });
 
                 // Find missing numbers (1-9 not present in grid)
@@ -518,7 +565,7 @@
                 const kuaMale = calculateKuaNumberFromDateString(dateOfBirth, 'male');
                 const kuaFemale = calculateKuaNumberFromDateString(dateOfBirth, 'female');
 
-                // If sex specified, place that Kua into the grid with single quotes
+                // If sex specified, place that Kua into the grid with (Kua) label
                 const selectedSex = (sex || '').toLowerCase();
                 let selectedKua = null;
                 if (selectedSex === 'male') selectedKua = kuaMale;
@@ -527,7 +574,8 @@
                 if (selectedKua && selectedKua.final && gridPositions[selectedKua.final]) {
                     const pos = gridPositions[selectedKua.final];
                     const current = grid[pos.row][pos.col].display || '';
-                    grid[pos.row][pos.col].display = current + "'" + String(selectedKua.final) + "'";
+                    // Add Kua at the end in format 'Kua-digit' with smaller font size
+                    grid[pos.row][pos.col].display = current + (current ? ' ' : '') + `<span class="text-sm">'Kua-${String(selectedKua.final)}'</span>`;
                     
                     // Remove Kua number from missing numbers if it's present
                     const kuaIndex = missingNumbers.indexOf(selectedKua.final);
@@ -541,8 +589,8 @@
                     day: day,
                     month: month,
                     year: year,
-                    mainPlanet: mainPlanet,
-                    lifePath: lifePath,
+                    driverNumber: driverNumber,
+                    conductor: conductor,
                     destinyNumber: destinyNumber,
                     missingNumbers: missingNumbers,
                     kuaNumberMale: kuaMale,
@@ -587,16 +635,16 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td class="border border-gray-300 p-2">Main Planet</td>
-                                        <td class="border border-gray-300 p-2 text-center">${data.mainPlanet && data.mainPlanet.intermediate !== null && [11, 22, 33].includes(data.mainPlanet.intermediate) ? data.mainPlanet.intermediate : '-'}</td>
-                                        <td class="border border-gray-300 p-2 text-center font-bold">${data.mainPlanet ? data.mainPlanet.final : '-'}</td>
-                                        <td class="border border-gray-300 p-2 text-center">${data.mainPlanet ? getPlanetName(data.mainPlanet.final) : '-'}</td>
+                                        <td class="border border-gray-300 p-2">Driver Number</td>
+                                        <td class="border border-gray-300 p-2 text-center">${data.driverNumber && data.driverNumber.intermediate !== null && [11, 22, 33].includes(data.driverNumber.intermediate) ? data.driverNumber.intermediate : '-'}</td>
+                                        <td class="border border-gray-300 p-2 text-center font-bold">${data.driverNumber ? data.driverNumber.final : '-'}</td>
+                                        <td class="border border-gray-300 p-2 text-center">${data.driverNumber ? getPlanetName(data.driverNumber.final) : '-'}</td>
                                     </tr>
                                     <tr>
-                                        <td class="border border-gray-300 p-2">Life Path</td>
-                                        <td class="border border-gray-300 p-2 text-center">${data.lifePath && data.lifePath.intermediate !== null && [11, 22, 33].includes(data.lifePath.intermediate) ? data.lifePath.intermediate : '-'}</td>
-                                        <td class="border border-gray-300 p-2 text-center font-bold">${data.lifePath ? data.lifePath.final : '-'}</td>
-                                        <td class="border border-gray-300 p-2 text-center">${data.lifePath ? getPlanetName(data.lifePath.final) : '-'}</td>
+                                        <td class="border border-gray-300 p-2">Conductor Number (life path)</td>
+                                        <td class="border border-gray-300 p-2 text-center">${data.conductor && data.conductor.intermediate !== null && [11, 22, 33].includes(data.conductor.intermediate) ? data.conductor.intermediate : '-'}</td>
+                                        <td class="border border-gray-300 p-2 text-center font-bold">${data.conductor ? data.conductor.final : '-'}</td>
+                                        <td class="border border-gray-300 p-2 text-center">${data.conductor ? getPlanetName(data.conductor.final) : '-'}</td>
                                     </tr>
                                     ${data.destinyNumber ? `
                                     <tr>
@@ -896,7 +944,12 @@
                     
                     const vedicData = await getVedicChartData(birthDate, timeOfBirth, countryOfBirth, townOfBirth);
                     
-                    displayVedicCharts(vedicData, fullName, timeOfBirth, `${townOfBirth}, ${countryOfBirth}`);
+                    // Get date of birth from form or data object for display
+                    const dobDay = document.getElementById('dob_day')?.value || data?.day || '';
+                    const dobMonth = document.getElementById('dob_month')?.value || data?.month || '';
+                    const dobYear = document.getElementById('dob_year')?.value || data?.year || '';
+                    
+                    displayVedicCharts(vedicData, fullName, timeOfBirth, `${townOfBirth}, ${countryOfBirth}`, dobDay, dobMonth, dobYear);
                 } catch (error) {
                     console.error('Error calculating Vedic Astrology:', error);
                     const errorMessage = error.message || 'Error calculating Vedic Astrology charts. Please ensure all birth details are correct.';
@@ -1164,7 +1217,7 @@
                 };
             }
 
-            function displayVedicCharts(data, fullName, timeOfBirth, birthPlace) {
+            function displayVedicCharts(data, fullName, timeOfBirth, birthPlace, dobDay, dobMonth, dobYear) {
                 const vedicContainer = document.getElementById('vedic-astrology-container');
                 if (!vedicContainer) return;
 
@@ -1174,11 +1227,17 @@
                 // Find ascendant sign index
                 const ascendantSignIndex = signs.indexOf(data.ascendant.sign);
 
+                // Format date of birth from passed parameters
+                const dateOfBirth = dobDay && dobMonth && dobYear 
+                    ? `${String(dobDay).padStart(2, '0')}/${String(dobMonth).padStart(2, '0')}/${dobYear}`
+                    : 'N/A';
+                
                 vedicContainer.innerHTML = `
                     <!-- Chart Information -->
                     <div class="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                         <p class="text-sm text-gray-700 mb-1"><span class="font-semibold">This chart is for:</span></p>
                         <p class="text-sm text-gray-800 mb-1"><span class="font-medium">Name:</span> ${fullName}</p>
+                        <p class="text-sm text-gray-800 mb-1"><span class="font-medium">Date of Birth:</span> ${dateOfBirth}</p>
                         <p class="text-sm text-gray-800 mb-1"><span class="font-medium">Time:</span> ${timeOfBirth}</p>
                         <p class="text-sm text-gray-800 mb-1"><span class="font-medium">Birth Place:</span> ${birthPlace}</p>
                         ${data.ayanamsa !== null && data.ayanamsa !== undefined ? `<p class="text-sm text-gray-800"><span class="font-medium">Ayanamsa:</span> ${data.ayanamsa.toFixed(6)}°</p>` : ''}

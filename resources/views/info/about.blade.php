@@ -27,7 +27,7 @@
                 <h2 class="text-xl font-semibold mb-2">Features</h2>
                 <ul class="list-disc list-inside text-gray-700 space-y-2">
                     <li>Lo Shu Grid calculation based on date of birth</li>
-                    <li> Basic numerology (Life Path, Destiny, Soul Urge, Personality, Birthday, Maturity
+                    <li> Basic numerology (Conductor, Destiny, Soul Urge, Personality, Birthday, Maturity
                         Numbers)</li>
                     <li>Kua Number calculations for both male and female</li>
                     <li>Vedic Astrology charts with planetary positions</li>

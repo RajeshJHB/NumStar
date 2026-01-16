@@ -296,6 +296,17 @@ class JobController extends Controller
                 ], 400);
             }
 
+            // Log the received request values
+            \Log::info('Vedic Astrology Request Received', [
+                'year' => $request->year,
+                'month' => $request->month,
+                'day' => $request->day,
+                'time' => $time,
+                'country' => $country,
+                'town' => $town,
+                'coordinates' => $coordinates,
+            ]);
+
             // Calculate Vedic astrology chart
             $chartData = $this->calculateVedicChart(
                 $request->year,
@@ -444,6 +455,22 @@ class JobController extends Controller
                     ],
                 ];
 
+                // Log the exact payload being sent to the API
+                \Log::info('Vedic API Payload', [
+                    'api_url' => $apiUrl,
+                    'payload' => $payload,
+                    'payload_json' => json_encode($payload, JSON_PRETTY_PRINT),
+                    'input_values' => [
+                        'year' => $year,
+                        'month' => $month,
+                        'day' => $day,
+                        'time' => $time,
+                        'lat' => $lat,
+                        'lon' => $lon,
+                        'timezone' => $timezone,
+                    ],
+                ]);
+
                 $request = Http::timeout(10)
                     ->withHeaders([
                         'Accept'       => 'application/json',
@@ -458,6 +485,14 @@ class JobController extends Controller
                 }
 
                 $response = $request->post($apiUrl, $payload);
+
+                // Log the API response
+                \Log::info('Vedic API Response', [
+                    'status_code' => $response->status(),
+                    'successful' => $response->successful(),
+                    'response_body' => $response->body(),
+                    'response_json' => $response->successful() ? $response->json() : null,
+                ]);
 
                 if ($response->successful()) {
                     $apiData = $response->json();
@@ -532,15 +567,28 @@ class JobController extends Controller
                             $apiCurrentSign = isset($pData['current_sign']) ? (int) $pData['current_sign'] : null;
                             $isRetro = isset($pData['isRetro']) ? ($pData['isRetro'] === 'true' || $pData['isRetro'] === true) : false;
 
+                            // Validate apiCurrentSign is within valid range (0-11)
+                            $apiCurrentSignName = null;
+                            if ($apiCurrentSign !== null && $apiCurrentSign >= 0 && $apiCurrentSign <= 11) {
+                                $apiCurrentSignName = $signs[$apiCurrentSign];
+                            }
+
+                            // Get house number from API if available
+                            $houseNumber = isset($pData['house_number']) ? (int) $pData['house_number'] : null;
+                            // Validate house number is within valid range (1-12)
+                            if ($houseNumber !== null && ($houseNumber < 1 || $houseNumber > 12)) {
+                                $houseNumber = null;
+                            }
+
                             $planets[] = [
                                 'name'           => $planetKey,
                                 'sign'           => $signs[$signIndex], // computed
                                 'degree'         => round($degreeWithinSign, 2), // computed
                                 'nakshatra'      => $nakshatras[$nakshatraIndex],
-                                'house'          => null, // assigned after we know ascendant
+                                'house'          => $houseNumber, // use API house number if available, otherwise will be calculated
                                 'isRetro'        => $isRetro,
                                 'apiNormDegree'  => $apiNormDegree !== null ? round($apiNormDegree, 2) : null,
-                                'apiCurrentSign' => $apiCurrentSign !== null ? $signs[$apiCurrentSign] : null,
+                                'apiCurrentSign' => $apiCurrentSignName,
                                 'computedSign'   => $signs[$signIndex], // for clarity
                                 'computedDegree' => round($degreeWithinSign, 2), // for clarity
                             ];
@@ -574,12 +622,18 @@ class JobController extends Controller
                             $ascApiNormDegree = isset($planetMap['Ascendant']['normDegree']) ? (float) $planetMap['Ascendant']['normDegree'] : null;
                             $ascApiCurrentSign = isset($planetMap['Ascendant']['current_sign']) ? (int) $planetMap['Ascendant']['current_sign'] : null;
 
+                            // Validate ascApiCurrentSign is within valid range (0-11)
+                            $ascApiCurrentSignName = null;
+                            if ($ascApiCurrentSign !== null && $ascApiCurrentSign >= 0 && $ascApiCurrentSign <= 11) {
+                                $ascApiCurrentSignName = $signs[$ascApiCurrentSign];
+                            }
+
                             $ascendant = [
                                 'sign'           => $signs[$ascSignIndex],
                                 'degree'         => round($ascDegreeWithinSign, 2),
                                 'nakshatra'      => $nakshatras[$ascNakshatraIndex],
                                 'apiNormDegree'  => $ascApiNormDegree !== null ? round($ascApiNormDegree, 2) : null,
-                                'apiCurrentSign' => $ascApiCurrentSign !== null ? $signs[$ascApiCurrentSign] : null,
+                                'apiCurrentSign' => $ascApiCurrentSignName,
                                 'computedSign'   => $signs[$ascSignIndex],
                                 'computedDegree' => round($ascDegreeWithinSign, 2),
                             ];
@@ -642,122 +696,37 @@ class JobController extends Controller
                             'houses'    => $houses,
                             'ayanamsa'  => $ayanamsa !== null ? round($ayanamsa, 6) : null,
                         ];
+                    } else {
+                        // API returned success but data structure is invalid
+                        \Log::error('Vedic API returned invalid data structure', [
+                            'status_code' => $response->status(),
+                            'response' => $apiData,
+                        ]);
+                        throw new \Exception('Vedic astrology API returned invalid data structure.');
                     }
+                } else {
+                    // API call was not successful
+                    \Log::error('Vedic API call was not successful', [
+                        'status_code' => $response->status(),
+                        'response_body' => $response->body(),
+                    ]);
+                    throw new \Exception('Vedic astrology API call failed with status: ' . $response->status());
                 }
             } catch (\Throwable $e) {
-                \Log::warning('Vedic API call failed, falling back to local calculation', [
+                \Log::error('Vedic API call failed', [
                     'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'year' => $year,
+                    'month' => $month,
+                    'day' => $day,
                 ]);
+                // Don't fall back - throw exception to return error
+                throw new \Exception('Vedic astrology API call failed: ' . $e->getMessage());
             }
         }
 
-        // ---------------------------------------------------------------------
-        // STEP 2: Fallback – simplified local approximation (existing behavior)
-        // ---------------------------------------------------------------------
-
-        $birthDate = new \DateTime("{$year}-{$month}-{$day} {$time}");
-        $julianDay = $this->getJulianDay($birthDate);
-        
-        $dayOfYear = (int) $birthDate->format('z');
-        $ascendant = $this->calculateAscendant($julianDay, $lat, $lon);
-        $ascendantSignIndex = array_search($ascendant['sign'], $signs, true);
-        if ($ascendantSignIndex === false) {
-            $ascendantSignIndex = 0;
-        }
-
-        // Add nakshatra for ascendant in fallback mode as well
-        $ascLon = $ascendantSignIndex * 30.0 + ($ascendant['degree'] ?? 0.0);
-        $ascNakshatraIndex = (int) floor($ascLon / 13.3333333333) % 27;
-        if ($ascNakshatraIndex < 0) {
-            $ascNakshatraIndex = ($ascNakshatraIndex + 27) % 27;
-        }
-        $ascendant['nakshatra'] = $nakshatras[$ascNakshatraIndex];
-
-        // Helper function to safely get array index
-        $getSignIndex = function($value, $modulo) use ($signs) {
-            $index = (int)floor($value) % $modulo;
-            if ($index < 0) {
-                $index = ($index + $modulo) % $modulo;
-            }
-            return $index;
-        };
-
-        $getNakshatraIndex = function($degree) use ($nakshatras) {
-            $index = (int)floor($degree / 13.333333) % 27;
-            if ($index < 0) {
-                $index = ($index + 27) % 27;
-            }
-            return $index;
-        };
-
-        $planets = [
-            [
-                'name' => 'Sun',
-                'sign' => $signs[$getSignIndex($dayOfYear / 30, 12)],
-                'degree' => round(($dayOfYear % 30) * 0.985, 2),
-                'nakshatra' => $nakshatras[$getNakshatraIndex(($dayOfYear % 30) * 0.985)]
-            ],
-            [
-                'name' => 'Moon',
-                'sign' => $signs[$getSignIndex($dayOfYear / 2.5, 12)],
-                'degree' => round(($dayOfYear % 2.5) * 13.2, 2),
-                'nakshatra' => $nakshatras[$getNakshatraIndex(($dayOfYear % 2.5) * 13.2)]
-            ],
-            [
-                'name' => 'Mars',
-                'sign' => $signs[$getSignIndex($dayOfYear / 55, 12)],
-                'degree' => round(($dayOfYear % 55) * 0.524, 2),
-                'nakshatra' => $nakshatras[$getNakshatraIndex(($dayOfYear % 55) * 0.524)]
-            ],
-            [
-                'name' => 'Mercury',
-                'sign' => $signs[$getSignIndex($dayOfYear / 88, 12)],
-                'degree' => round(($dayOfYear % 88) * 0.409, 2),
-                'nakshatra' => $nakshatras[$getNakshatraIndex(($dayOfYear % 88) * 0.409)]
-            ],
-            [
-                'name' => 'Jupiter',
-                'sign' => $signs[$getSignIndex($dayOfYear / 365, 12)],
-                'degree' => round(($dayOfYear % 365) * 0.083, 2),
-                'nakshatra' => $nakshatras[$getNakshatraIndex(($dayOfYear % 365) * 0.083)]
-            ],
-            [
-                'name' => 'Venus',
-                'sign' => $signs[$getSignIndex($dayOfYear / 225, 12)],
-                'degree' => round(($dayOfYear % 225) * 0.16, 2),
-                'nakshatra' => $nakshatras[$getNakshatraIndex(($dayOfYear % 225) * 0.16)]
-            ],
-            [
-                'name' => 'Saturn',
-                'sign' => $signs[$getSignIndex($dayOfYear / 10759, 12)],
-                'degree' => round(($dayOfYear % 10759) * 0.033, 2),
-                'nakshatra' => $nakshatras[$getNakshatraIndex(($dayOfYear % 10759) * 0.033)]
-            ],
-            [
-                'name' => 'Rahu',
-                'sign' => $signs[$getSignIndex($dayOfYear / 6798, 12)],
-                'degree' => round(($dayOfYear % 6798) * 0.053, 2),
-                'nakshatra' => $nakshatras[$getNakshatraIndex(($dayOfYear % 6798) * 0.053)]
-            ],
-            [
-                'name' => 'Ketu',
-                'sign' => $signs[$getSignIndex(($dayOfYear / 6798) + 6, 12)],
-                'degree' => round(($dayOfYear % 6798) * 0.053, 2),
-                'nakshatra' => $nakshatras[$getNakshatraIndex(($dayOfYear % 6798) * 0.053)]
-            ],
-        ];
-
-        // Assign houses
-        foreach ($planets as &$planet) {
-            $planetSignIndex = array_search($planet['sign'], $signs);
-            $planet['house'] = (($planetSignIndex - $ascendantSignIndex + 12) % 12) + 1;
-        }
-
-        return [
-            'planets' => $planets,
-            'ascendant' => $ascendant,
-            'houses' => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-        ];
+        // If we reach here, API was not configured or failed
+        throw new \Exception('Vedic astrology calculation is not available. Please configure the API or ensure the API is accessible.');
     }
 
     private function getJulianDay(\DateTime $date)
