@@ -470,16 +470,6 @@
                     digitCounts[digit]++;
                 });
 
-                // Track Destiny Number digits separately to mark them with "(Name)"
-                const destinyNumberDigits = new Set();
-                if (destinyNumber) {
-                    const destinyDigits = destinyNumber.final.toString().split('').map(d => parseInt(d)).filter(d => d > 0 && d <= 9);
-                    destinyDigits.forEach(digit => {
-                        digitCounts[digit]++;
-                        destinyNumberDigits.add(digit);
-                    });
-                }
-
                 // Lo Shu grid positions with planet names
                 // Position mapping: 4=Rahu, 9=Mars, 2=Moon, 3=Jupiter, 5=Mercury, 7=Ketu, 8=Saturn, 1=Sun, 6=Venus
                 const gridPositions = {
@@ -501,49 +491,17 @@
                     [{ planet: 'Saturn', display: '' }, { planet: 'Sun', display: '' }, { planet: 'Venus', display: '' }]
                 ];
 
-                // Track Name digits separately to add them at the end
-                const nameDigitsByPosition = {};
-
                 // Fill grid with digit instances (repeat digit based on count)
-                // Regular digits first, Name digits will be added at the end
                 Object.keys(digitCounts).forEach(digitStr => {
                     const digit = parseInt(digitStr);
                     const count = digitCounts[digit];
                     if (count > 0 && digit >= 1 && digit <= 9) {
                         const pos = gridPositions[digit];
                         if (pos) {
-                            // Build display string: repeat digit
-                            let displayStr = digit.toString().repeat(count);
-                            
-                            // If this digit comes from Name, track it separately and remove one from regular count
-                            if (destinyNumberDigits.has(digit)) {
-                                // Remove one occurrence for Name (it will be added at the end as 'Name-digit')
-                                if (count > 1) {
-                                    displayStr = displayStr.slice(0, -1);
-                                } else {
-                                    displayStr = ''; // If only one occurrence and it's from Name, remove it completely
-                                }
-                                // Track this Name digit to add at the end
-                                const posKey = `${pos.row}-${pos.col}`;
-                                if (!nameDigitsByPosition[posKey]) {
-                                    nameDigitsByPosition[posKey] = [];
-                                }
-                                nameDigitsByPosition[posKey].push(digit);
-                            }
-                            
-                            grid[pos.row][pos.col].display = displayStr;
+                            // Display the digit repeated 'count' times
+                            grid[pos.row][pos.col].display = digit.toString().repeat(count);
                         }
                     }
-                });
-
-                // Add Name digits at the end of each grid cell
-                Object.keys(nameDigitsByPosition).forEach(posKey => {
-                    const [row, col] = posKey.split('-').map(Number);
-                    const nameDigits = nameDigitsByPosition[posKey];
-                    const current = grid[row][col].display || '';
-                    // Add each Name digit in format 'Name-digit' at the end with smaller font size
-                    const nameDisplay = nameDigits.map(d => `<span class="text-sm">'Name-${d}'</span>`).join(' ');
-                    grid[row][col].display = current + (current ? ' ' : '') + nameDisplay;
                 });
 
                 // Find missing numbers (1-9 not present in grid)
@@ -623,7 +581,6 @@
 
                         <!-- Numerology Numbers Table -->
                         <div class="mb-6">
-                            <h3 class="text-lg font-semibold mb-3">Numerology Numbers</h3>
                             <table class="w-full border-collapse border border-gray-300">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -647,11 +604,11 @@
                                         <td class="border border-gray-300 p-2 text-center">${data.conductor ? getPlanetName(data.conductor.final) : '-'}</td>
                                     </tr>
                                     ${data.destinyNumber ? `
-                                    <tr>
-                                        <td class="border border-gray-300 p-2">Destiny Number (full name)</td>
-                                        <td class="border border-gray-300 p-2 text-center">${data.destinyNumber.intermediate !== null && [11, 22, 33].includes(data.destinyNumber.intermediate) ? data.destinyNumber.intermediate : '-'}</td>
-                                        <td class="border border-gray-300 p-2 text-center font-bold">${data.destinyNumber.final}</td>
-                                        <td class="border border-gray-300 p-2 text-center">${getPlanetName(data.destinyNumber.final)}</td>
+                                    <tr class="${getPlanetBgColor(data.destinyNumber.final)}">
+                                        <td class="border border-gray-300 p-2 ${getPlanetTextColor(data.destinyNumber.final)}">Destiny Number (full name)</td>
+                                        <td class="border border-gray-300 p-2 text-center ${getPlanetTextColor(data.destinyNumber.final)}">${data.destinyNumber.intermediate !== null && [11, 22, 33].includes(data.destinyNumber.intermediate) ? data.destinyNumber.intermediate : '-'}</td>
+                                        <td class="border border-gray-300 p-2 text-center font-bold ${getPlanetTextColor(data.destinyNumber.final)}">${data.destinyNumber.final}</td>
+                                        <td class="border border-gray-300 p-2 text-center ${getPlanetTextColor(data.destinyNumber.final)}">${getPlanetName(data.destinyNumber.final)}</td>
                                     </tr>
                                     ` : ''}
                                     ${data.soulUrgeNumber ? `
@@ -884,6 +841,29 @@
                     5: 'Mercury', 6: 'Venus', 7: 'Ketu', 8: 'Saturn', 9: 'Mars'
                 };
                 return planetMap[number] || '';
+            }
+
+            function getPlanetBgColor(number) {
+                const colorMap = {
+                    1: 'bg-orange-500',      // Sun
+                    2: 'bg-slate-300',       // Moon
+                    3: 'bg-yellow-400',      // Jupiter
+                    4: 'bg-gray-500',        // Rahu
+                    5: 'bg-green-500',       // Mercury
+                    6: 'bg-pink-500',        // Venus
+                    7: 'bg-amber-700',       // Ketu
+                    8: 'bg-blue-900',        // Saturn
+                    9: 'bg-red-500'          // Mars
+                };
+                return colorMap[number] || '';
+            }
+
+            function getPlanetTextColor(number) {
+                // Some planets need dark text on light backgrounds
+                if (number === 2 || number === 3) {
+                    return 'text-gray-800';
+                }
+                return 'text-white';
             }
 
             // Vedic Astrology Calculations
